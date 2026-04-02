@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InvestPRO — Panel de Cartera</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080c12;
+    --surface: #0d1420;
+    --surface2: #111927;
+    --border: rgba(255,255,255,0.06);
+    --border-accent: rgba(0,245,160,0.25);
+    --accent: #00f5a0;
+    --accent2: #00c8f5;
+    --accent-red: #ff4d6d;
+    --accent-gold: #f5c542;
+    --text: #e8edf5;
+    --text-muted: #5a6a80;
+    --text-dim: #8899aa;
+    --mono: 'DM Mono', monospace;
+    --sans: 'Syne', sans-serif;
+    --radius: 14px;
+    --glow: 0 0 24px rgba(0,245,160,0.12);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,245,160,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,245,160,0.02) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Glow orb */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -200px;
+    right: -200px;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(0,200,245,0.06) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 40px;
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(12px);
+    background: rgba(8,12,18,0.85);
+    position: sticky;
+    top: 0;
+  }
+
+  .header-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .brand-icon {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+
+  .brand-name {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+
+  .brand-name span { color: var(--accent); }
+
+  .header-meta {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .header-badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    background: rgba(0,245,160,0.08);
+    border: 1px solid rgba(0,245,160,0.2);
+    padding: 4px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+  }
+
+  .header-time {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  /* ── LAYOUT ── */
+  main {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 36px 40px;
+    display: grid;
+    gap: 28px;
+  }
+
+  /* ── SECTION TITLE ── */
+  .section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── CARDS GRID ── */
+  .cards-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .card:hover {
+    border-color: var(--border-accent);
+    box-shadow: var(--glow);
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .card:hover::before { opacity: 1; }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 22px;
+  }
+
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 1px;
+    font-family: var(--mono);
+  }
+
+  .card-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+  }
+
+  .card-icon.green { background: rgba(0,245,160,0.1); }
+  .card-icon.blue  { background: rgba(0,200,245,0.1); }
+  .card-icon.gold  { background: rgba(245,197,66,0.1); }
+
+  /* ── FORM ELEMENTS ── */
+  .field {
+    margin-bottom: 14px;
+  }
+
+  label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+
+  input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+
+  input::placeholder { color: var(--text-muted); }
+
+  input:focus {
+    border-color: rgba(0,245,160,0.4);
+    box-shadow: 0 0 0 3px rgba(0,245,160,0.07);
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.4);
+  }
+
+  /* ── BUTTONS ── */
+  .btn {
+    width: 100%;
+    margin-top: 18px;
+    padding: 12px;
+    border-radius: 9px;
+    border: none;
+    cursor: pointer;
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #00d48a);
+    color: #060d0f;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0,245,160,0.25);
+  }
+
+  .btn-secondary {
+    background: rgba(0,200,245,0.1);
+    color: var(--accent2);
+    border: 1px solid rgba(0,200,245,0.2);
+  }
+
+  .btn-secondary:hover {
+    background: rgba(0,200,245,0.18);
+    transform: translateY(-1px);
+  }
+
+  .btn-gold {
+    background: rgba(245,197,66,0.1);
+    color: var(--accent-gold);
+    border: 1px solid rgba(245,197,66,0.2);
+  }
+
+  .btn-gold:hover {
+    background: rgba(245,197,66,0.18);
+    transform: translateY(-1px);
+  }
+
+  /* ── RESUMEN ── */
+  .resumen-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .stat-card:hover { border-color: var(--border-accent); }
+
+  .stat-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+
+  .stat-value {
+    font-family: var(--mono);
+    font-size: 24px;
+    font-weight: 500;
+    letter-spacing: -0.5px;
+  }
+
+  .stat-value.green { color: var(--accent); }
+  .stat-value.red   { color: var(--accent-red); }
+  .stat-value.gold  { color: var(--accent-gold); }
+  .stat-value.blue  { color: var(--accent2); }
+
+  .stat-sub {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  .stat-card .corner-glow {
+    position: absolute;
+    bottom: -20px;
+    right: -20px;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    opacity: 0.06;
+  }
+
+  /* ── TABLE ── */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .table-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .table-title {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+
+  .table-count {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    background: var(--surface2);
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  thead th {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 12px 24px;
+    background: rgba(255,255,255,0.015);
+    border-bottom: 1px solid var(--border);
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+    animation: rowIn 0.3s ease forwards;
+    opacity: 0;
+  }
+
+  @keyframes rowIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  tbody tr:hover { background: rgba(0,245,160,0.03); }
+  tbody tr:last-child { border-bottom: none; }
+
+  tbody td {
+    padding: 14px 24px;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  tbody td:first-child {
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .tag-activo {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0,245,160,0.08);
+    border: 1px solid rgba(0,245,160,0.15);
+    padding: 3px 10px;
+    border-radius: 6px;
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .empty-state {
+    padding: 48px;
+    text-align: center;
+    color: var(--text-muted);
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.5px;
+  }
+
+  .empty-icon { font-size: 28px; margin-bottom: 10px; }
+
+  /* ── CHART ── */
+  .chart-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .chart-body { padding: 24px; }
+
+  canvas {
+    width: 100% !important;
+    height: 260px !important;
+  }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    z-index: 1000;
+    background: var(--surface2);
+    border: 1px solid var(--border-accent);
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 12px 20px;
+    border-radius: 10px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    transform: translateY(20px);
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.25s ease;
+  }
+
+  #toast.show {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .card, .stat-card, .table-wrap, .chart-wrap {
+    animation: fadeUp 0.5s ease forwards;
+  }
+  .cards-row .card:nth-child(1) { animation-delay: 0.05s; }
+  .cards-row .card:nth-child(2) { animation-delay: 0.12s; }
+  .cards-row .card:nth-child(3) { animation-delay: 0.19s; }
+  .resumen-grid .stat-card:nth-child(1) { animation-delay: 0.1s; }
+  .resumen-grid .stat-card:nth-child(2) { animation-delay: 0.15s; }
+  .resumen-grid .stat-card:nth-child(3) { animation-delay: 0.2s; }
+  .resumen-grid .stat-card:nth-child(4) { animation-delay: 0.25s; }
+
+  @media (max-width: 900px) {
+    main { padding: 20px; }
+    .cards-row { grid-template-columns: 1fr; }
+    .resumen-grid { grid-template-columns: repeat(2, 1fr); }
+    header { padding: 16px 20px; }
+    .header-meta { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<header>
+  <div class="header-brand">
+    <div class="brand-icon">📈</div>
+    <div class="brand-name">Invest<span>PRO</span></div>
+  </div>
+  <div class="header-meta">
+    <span class="header-badge">● EN VIVO</span>
+    <span class="header-time" id="headerTime">--:--:--</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- ── FORMULARIOS ── -->
+  <div>
+    <div class="section-label">Operaciones</div>
+    <div class="cards-row">
+
+      <!-- Agregar Compra -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Nueva Compra</span>
+          <div class="card-icon green">🛒</div>
+        </div>
+        <div class="field">
+          <label>Activo</label>
+          <input id="activo" placeholder="Ej: AL30, GD35...">
+        </div>
+        <div class="field">
+          <label>Fecha</label>
+          <input id="fecha" type="date">
+        </div>
+        <div class="field">
+          <label>Nominales</label>
+          <input id="nominales" type="number" placeholder="0">
+        </div>
+        <div class="field">
+          <label>Precio</label>
+          <input id="precio" type="number" step="0.01" placeholder="0.00">
+        </div>
+        <button class="btn btn-primary" onclick="agregarCompra()">
+          <span>+</span> Agregar Compra
+        </button>
+      </div>
+
+      <!-- Precio Actual -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Precio Actual</span>
+          <div class="card-icon blue">💹</div>
+        </div>
+        <div class="field">
+          <label>Activo</label>
+          <input id="activoPrecio" placeholder="Ej: AL30">
+        </div>
+        <div class="field">
+          <label>Precio de Mercado</label>
+          <input id="precioActual" type="number" step="0.01" placeholder="0.00">
+        </div>
+        <button class="btn btn-secondary" onclick="actualizarPrecio()">
+          ↻ Actualizar Precio
+        </button>
+      </div>
+
+      <!-- Dividendos -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Dividendos</span>
+          <div class="card-icon gold">💰</div>
+        </div>
+        <div class="field">
+          <label>Activo</label>
+          <input id="divActivo" placeholder="Ej: AL30">
+        </div>
+        <div class="field">
+          <label>Monto Recibido</label>
+          <input id="divMonto" type="number" placeholder="0.00">
+        </div>
+        <button class="btn btn-gold" onclick="agregarDividendo()">
+          ✦ Registrar Dividendo
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── RESUMEN KPIs ── -->
+  <div>
+    <div class="section-label">Resumen de Cartera</div>
+    <div class="resumen-grid" id="resumen">
+      <div class="stat-card">
+        <div class="stat-label">Capital Invertido</div>
+        <div class="stat-value blue" id="kpi-invertido">$ 0.00</div>
+        <div class="stat-sub">Total histórico</div>
+        <div class="corner-glow" style="background:var(--accent2)"></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Valor Actual</div>
+        <div class="stat-value green" id="kpi-actual">$ 0.00</div>
+        <div class="stat-sub">A precio de mercado</div>
+        <div class="corner-glow" style="background:var(--accent)"></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Ganancia / Pérdida</div>
+        <div class="stat-value" id="kpi-ganancia">$ 0.00</div>
+        <div class="stat-sub" id="kpi-pct">0.00% rentabilidad</div>
+        <div class="corner-glow" style="background:var(--accent-gold)"></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Dividendos Cobrados</div>
+        <div class="stat-value gold" id="kpi-dividendos">$ 0.00</div>
+        <div class="stat-sub">Cobros acumulados</div>
+        <div class="corner-glow" style="background:var(--accent-gold)"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TABLA ── -->
+  <div class="table-wrap">
+    <div class="table-header">
+      <span class="table-title">Historial de Compras</span>
+      <span class="table-count" id="tabla-count">0 operaciones</span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Activo</th>
+          <th>Fecha</th>
+          <th>Nominales</th>
+          <th>Precio Compra</th>
+          <th>Invertido</th>
+          <th>P. Actual</th>
+          <th>P&L</th>
+        </tr>
+      </thead>
+      <tbody id="tablaCompras">
+        <tr>
+          <td colspan="7">
+            <div class="empty-state">
+              <div class="empty-icon">📭</div>
+              <div>Sin operaciones registradas</div>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── GRÁFICO ── -->
+  <div class="chart-wrap">
+    <div class="chart-header">
+      <span class="table-title">Evolución de Capital</span>
+      <span class="header-badge" style="font-family:var(--mono); font-size:10px;">HISTÓRICO</span>
+    </div>
+    <div class="chart-body">
+      <canvas id="grafico"></canvas>
+    </div>
+  </div>
+
+</main>
+
+<!-- ── TOAST ── -->
+<div id="toast"></div>
+
+<script>
+// ── DATA ──
+let compras = JSON.parse(localStorage.getItem('compras') || '[]');
+let precios = JSON.parse(localStorage.getItem('precios') || '{}');
+let dividendos = JSON.parse(localStorage.getItem('dividendos') || '{}');
+
+// ── UTILS ──
+function fmt(n, d = 2) {
+  return new Intl.NumberFormat('es-AR', { minimumFractionDigits: d, maximumFractionDigits: d }).format(n);
+}
+
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = (type === 'success' ? '✓ ' : '⚠ ') + msg;
+  t.style.borderColor = type === 'success' ? 'rgba(0,245,160,0.3)' : 'rgba(255,77,109,0.3)';
+  t.style.color = type === 'success' ? 'var(--accent)' : 'var(--accent-red)';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function save() {
+  localStorage.setItem('compras', JSON.stringify(compras));
+  localStorage.setItem('precios', JSON.stringify(precios));
+  localStorage.setItem('dividendos', JSON.stringify(dividendos));
+}
+
+// ── CLOCK ──
+function updateClock() {
+  const now = new Date();
+  document.getElementById('headerTime').textContent =
+    now.toLocaleTimeString('es-AR', { hour12: false });
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── OPERACIONES ──
+function agregarCompra() {
+  const activo = document.getElementById('activo').value.trim().toUpperCase();
+  const fecha  = document.getElementById('fecha').value;
+  const noms   = parseFloat(document.getElementById('nominales').value);
+  const precio = parseFloat(document.getElementById('precio').value);
+
+  if (!activo || !fecha || isNaN(noms) || isNaN(precio)) {
+    showToast('Completá todos los campos', 'error'); return;
+  }
+
+  compras.push({ activo, fecha, nominales: noms, precio });
+  save(); renderAll();
+  document.getElementById('activo').value = '';
+  document.getElementById('nominales').value = '';
+  document.getElementById('precio').value = '';
+  showToast(`Compra de ${activo} registrada`);
+}
+
+function actualizarPrecio() {
+  const activo = document.getElementById('activoPrecio').value.trim().toUpperCase();
+  const precio = parseFloat(document.getElementById('precioActual').value);
+  if (!activo || isNaN(precio)) { showToast('Datos incompletos', 'error'); return; }
+  precios[activo] = precio;
+  save(); renderAll();
+  document.getElementById('activoPrecio').value = '';
+  document.getElementById('precioActual').value = '';
+  showToast(`Precio de ${activo} actualizado`);
+}
+
+function agregarDividendo() {
+  const activo = document.getElementById('divActivo').value.trim().toUpperCase();
+  const monto  = parseFloat(document.getElementById('divMonto').value);
+  if (!activo || isNaN(monto)) { showToast('Datos incompletos', 'error'); return; }
+  dividendos[activo] = (dividendos[activo] || 0) + monto;
+  save(); renderAll();
+  document.getElementById('divActivo').value = '';
+  document.getElementById('divMonto').value = '';
+  showToast(`Dividendo de $${fmt(monto)} registrado`);
+}
+
+// ── RENDER ──
+function renderAll() {
+  renderKPIs();
+  renderTabla();
+  renderGrafico();
+}
+
+function renderKPIs() {
+  let invertido = 0, actualTotal = 0, divTotal = 0;
+  compras.forEach(c => {
+    invertido += c.nominales * c.precio;
+    const pa = precios[c.activo] ?? c.precio;
+    actualTotal += c.nominales * pa;
+  });
+  Object.values(dividendos).forEach(d => divTotal += d);
+
+  const ganancia = actualTotal - invertido;
+  const pct = invertido > 0 ? (ganancia / invertido * 100) : 0;
+
+  document.getElementById('kpi-invertido').textContent = '$ ' + fmt(invertido);
+  document.getElementById('kpi-actual').textContent    = '$ ' + fmt(actualTotal);
+
+  const kpiG = document.getElementById('kpi-ganancia');
+  kpiG.textContent = (ganancia >= 0 ? '+ $ ' : '- $ ') + fmt(Math.abs(ganancia));
+  kpiG.className = 'stat-value ' + (ganancia >= 0 ? 'green' : 'red');
+
+  document.getElementById('kpi-pct').textContent = fmt(pct) + '% rentabilidad';
+  document.getElementById('kpi-dividendos').textContent = '$ ' + fmt(divTotal);
+}
+
+function renderTabla() {
+  const tbody = document.getElementById('tablaCompras');
+  document.getElementById('tabla-count').textContent = compras.length + ' operaciones';
+
+  if (compras.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">📭</div><div>Sin operaciones registradas</div></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = compras.map((c, i) => {
+    const invertido = c.nominales * c.precio;
+    const pa = precios[c.activo] ?? c.precio;
+    const actual = c.nominales * pa;
+    const pl = actual - invertido;
+    const plColor = pl >= 0 ? 'var(--accent)' : 'var(--accent-red)';
+    return `<tr style="animation-delay:${i * 0.04}s">
+      <td><span class="tag-activo">● ${c.activo}</span></td>
+      <td>${c.fecha}</td>
+      <td>${fmt(c.nominales, 0)}</td>
+      <td>$ ${fmt(c.precio)}</td>
+      <td>$ ${fmt(invertido)}</td>
+      <td style="color:var(--accent2)">$ ${fmt(pa)}</td>
+      <td style="color:${plColor}; font-weight:500">${pl >= 0 ? '+' : ''}$ ${fmt(pl)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── CHART (vanilla canvas) ──
+function renderGrafico() {
+  const canvas = document.getElementById('grafico');
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.offsetWidth * window.devicePixelRatio || 800;
+  canvas.height = 260 * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+  const W = canvas.offsetWidth || 800, H = 260;
+  ctx.clearRect(0, 0, W, H);
+
+  if (compras.length === 0) {
+    ctx.fillStyle = '#5a6a80';
+    ctx.font = '12px DM Mono, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('Sin datos para mostrar', W / 2, H / 2);
+    return;
+  }
+
+  // Build cumulative timeline
+  const sorted = [...compras].sort((a, b) => a.fecha.localeCompare(b.fecha));
+  let cumInv = 0;
+  const points = sorted.map(c => {
+    cumInv += c.nominales * c.precio;
+    const pa = precios[c.activo] ?? c.precio;
+    const val = cumInv - (c.nominales * c.precio) + (c.nominales * pa);
+    return { label: c.activo, invertido: cumInv, valor: val };
+  });
+
+  const pad = { t: 20, r: 20, b: 40, l: 70 };
+  const gW = W - pad.l - pad.r;
+  const gH = H - pad.t - pad.b;
+  const n = points.length;
+
+  const allVals = points.flatMap(p => [p.invertido, p.valor]);
+  const minV = Math.min(...allVals) * 0.97;
+  const maxV = Math.max(...allVals) * 1.03;
+  const range = maxV - minV || 1;
+
+  const xScale = i => pad.l + (i / Math.max(n - 1, 1)) * gW;
+  const yScale = v => pad.t + gH - ((v - minV) / range) * gH;
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + (gH / 4) * i;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+    const val = maxV - (range / 4) * i;
+    ctx.fillStyle = '#5a6a80';
+    ctx.font = '10px DM Mono, monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText('$' + fmt(val, 0), pad.l - 8, y + 4);
+  }
+
+  // Invertido line (subtle)
+  ctx.beginPath();
+  ctx.strokeStyle = 'rgba(0,200,245,0.25)';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([4, 4]);
+  points.forEach((p, i) => {
+    i === 0 ? ctx.moveTo(xScale(i), yScale(p.invertido)) : ctx.lineTo(xScale(i), yScale(p.invertido));
+  });
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Area under valor
+  if (n > 0) {
+    const grad = ctx.createLinearGradient(0, pad.t, 0, H - pad.b);
+    grad.addColorStop(0, 'rgba(0,245,160,0.15)');
+    grad.addColorStop(1, 'rgba(0,245,160,0)');
+    ctx.beginPath();
+    ctx.moveTo(xScale(0), H - pad.b);
+    points.forEach((p, i) => ctx.lineTo(xScale(i), yScale(p.valor)));
+    ctx.lineTo(xScale(n - 1), H - pad.b);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+  }
+
+  // Valor line
+  ctx.beginPath();
+  ctx.strokeStyle = '#00f5a0';
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  points.forEach((p, i) => {
+    i === 0 ? ctx.moveTo(xScale(i), yScale(p.valor)) : ctx.lineTo(xScale(i), yScale(p.valor));
+  });
+  ctx.stroke();
+
+  // Dots
+  points.forEach((p, i) => {
+    ctx.beginPath();
+    ctx.arc(xScale(i), yScale(p.valor), 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#00f5a0';
+    ctx.fill();
+    ctx.strokeStyle = '#080c12';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Label
+    ctx.fillStyle = '#5a6a80';
+    ctx.font = '9px DM Mono, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(p.label, xScale(i), H - pad.b + 16);
+  });
+}
+
+// ── INIT ──
+document.addEventListener('DOMContentLoaded', () => {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('fecha').value = today;
+  renderAll();
+});
+
+window.addEventListener('resize', () => renderGrafico());
+</script>
+</body>
+</html>
